@@ -339,7 +339,7 @@
       if(method==='uah') payBtn.textContent='🇺🇦 Оплатить '+state.prices.uah+' ₴';
       if(method==='stars') payBtn.textContent='⭐ Оплатить '+state.prices.stars+' Stars';
       payBtn.disabled=false;
-      claimBtn.hidden=false;
+      claimBtn.hidden=method!=='stars';
     }
 
     function updateControls(){
@@ -470,17 +470,41 @@
     uahMethod.addEventListener('click',()=>selectMethod('uah'));
     starsMethod.addEventListener('click',()=>selectMethod('stars'));
 
-    payBtn.addEventListener('click',()=>{
-      if(!selectedMethod) return;
+    payBtn.addEventListener('click',async()=>{
+      if(!selectedMethod || payBtn.disabled) return;
       haptic();
-      let url=state.paymentUrl;
+
       if(selectedMethod==='stars'){
         const msg=encodeURIComponent('VIP рулетка — оплата '+state.prices.stars+' Stars');
-        url='https://t.me/'+state.owner+'?text='+msg;
+        const url='https://t.me/'+state.owner+'?text='+msg;
+        if(tg?.openTelegramLink) tg.openTelegramLink(url);
+        else location.href=url;
+        return;
       }
-      if(tg?.openLink && selectedMethod!=='stars') tg.openLink(url);
-      else if(tg?.openTelegramLink && selectedMethod==='stars') tg.openTelegramLink(url);
-      else location.href=url;
+
+      payBtn.disabled=true;
+      setStatus('⏳ Создаю оплату прокрутки…');
+      try{
+        const d=await api('create_spin',{method:selectedMethod});
+        state.spin=d.spin;
+        if(!d.payment_url) throw new Error('missing_payment_url');
+
+        if(tg?.openLink) tg.openLink(d.payment_url);
+        else location.href=d.payment_url;
+
+        setStatus('💳 Открыта единая страница BLEZZ RUSSIA PAY. После оплаты отправьте чек там.');
+        refreshBtn.hidden=false;
+        startPolling();
+      }catch(e){
+        setStatus(
+          e.code==='payment_method_unavailable'
+            ? '❌ Этот способ оплаты сейчас недоступен.'
+            : '❌ Не удалось открыть оплату. Попробуйте ещё раз.',
+          'bad'
+        );
+      }finally{
+        payBtn.disabled=false;
+      }
     });
 
     claimBtn.addEventListener('click',async()=>{
