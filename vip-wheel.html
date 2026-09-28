@@ -224,7 +224,9 @@
     }
 
     function shortLabel(title){
-      return String(title)
+      const t=String(title);
+      if(t.includes('BMW M5 CS')) return 'M5\nCS';
+      return t
         .replace(' игровых рублей','')
         .replace('💰 ','💰\n')
         .replace('💎 ','💎\n')
@@ -232,17 +234,24 @@
         .replace('🚗 ','🚗\n');
     }
 
+    function visualWeight(prize){
+      // BMW визуально шире, но реальный шанс остаётся серверным — 1%.
+      return String(prize?.title||'').includes('BMW M5 CS')
+        ? 60
+        : Math.max(1,Number(prize?.weight||1));
+    }
+
     function drawWheel(){
       const list=state.prizes;
       const cx=canvas.width/2,cy=canvas.height/2,r=canvas.width*.47;
-      const total=Math.max(1,list.reduce((s,p)=>s+Math.max(1,Number(p.weight||1)),0));
+      const total=Math.max(1,list.reduce((s,p)=>s+visualWeight(p),0));
       const colors=['#7c3aed','#e11d48','#d97706','#0891b2','#4f46e5','#be123c','#a16207','#0f766e','#6d28d9','#b45309','#f59e0b'];
 
       ctx.clearRect(0,0,canvas.width,canvas.height);
       let current=-Math.PI/2;
 
       for(let i=0;i<list.length;i++){
-        const weight=Math.max(1,Number(list[i]?.weight||1));
+        const weight=visualWeight(list[i]);
         const seg=Math.PI*2*(weight/total);
         const start=current;
         const end=start+seg;
@@ -507,9 +516,9 @@
       try{
         const d=await api('spin',{spin_id:state.spin.id});
         const idx=Math.max(0,state.prizes.findIndex(p=>Number(p.id)===Number(d.prize.id)));
-        const totalWeight=Math.max(1,state.prizes.reduce((s,p)=>s+Math.max(1,Number(p.weight||1)),0));
-        const beforeWeight=state.prizes.slice(0,idx).reduce((s,p)=>s+Math.max(1,Number(p.weight||1)),0);
-        const selectedWeight=Math.max(1,Number(state.prizes[idx]?.weight||1));
+        const totalWeight=Math.max(1,state.prizes.reduce((s,p)=>s+visualWeight(p),0));
+        const beforeWeight=state.prizes.slice(0,idx).reduce((s,p)=>s+visualWeight(p),0);
+        const selectedWeight=visualWeight(state.prizes[idx]);
         const centerDeg=((beforeWeight+selectedWeight/2)/totalWeight)*360;
         const target=(360-(centerDeg%360))%360;
         const current=((rotation%360)+360)%360;
