@@ -403,8 +403,12 @@
           return;
         }
 
-        const until=d.vip_until?new Date(d.vip_until).toLocaleString('ru-RU'):'—';
-        vipline.innerHTML='👑 VIP активен до <b>'+escapeHtml(until)+'</b>';
+        if(d.vip_lifetime){
+          vipline.innerHTML='👑 <b>VIP активен навсегда</b>';
+        }else{
+          const until=d.vip_until?new Date(d.vip_until).toLocaleString('ru-RU'):'—';
+          vipline.innerHTML='👑 VIP активен до <b>'+escapeHtml(until)+'</b>';
+        }
         game.hidden=false;
         await applyState(d);
       }catch(e){
