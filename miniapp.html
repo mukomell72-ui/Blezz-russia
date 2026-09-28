@@ -3,19 +3,20 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <title>BLEZZ RUSSIA SHOP</title>
+  <title>BLEZZ RUSSIA Admin</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
     :root{
       --bg:#090b10;--card:#121722;--card2:#171d29;--text:#f5f7fb;--muted:#8f9bad;
-      --line:rgba(255,255,255,.08);--accent:#7c5cff;--accent2:#21d4fd;--good:#34d399;
+      --line:rgba(255,255,255,.08);--accent:#7c5cff;--good:#34d399;--danger:#fb7185;
     }
     *{box-sizing:border-box}
     body{
-      margin:0;min-height:100vh;color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+      margin:0;min-height:100vh;color:var(--text);
+      font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
       background:
         radial-gradient(circle at 15% -10%,rgba(124,92,255,.28),transparent 35%),
-        radial-gradient(circle at 100% 10%,rgba(33,212,253,.13),transparent 28%),
+        radial-gradient(circle at 100% 10%,rgba(52,211,153,.1),transparent 28%),
         var(--bg);
     }
     .wrap{max-width:620px;margin:0 auto;padding:18px 14px 28px}
@@ -30,98 +31,122 @@
     .user{margin-top:13px;padding-top:13px;border-top:1px solid var(--line);font-size:13px;color:#ccd4df}
     .section-title{font-size:13px;color:var(--muted);margin:20px 4px 9px;font-weight:800;text-transform:uppercase;letter-spacing:.08em}
     .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-    button,.tile{
-      border:1px solid var(--line);border-radius:18px;background:linear-gradient(180deg,var(--card2),var(--card));
+    button{
+      border:1px solid var(--line);border-radius:18px;
+      background:linear-gradient(180deg,var(--card2),var(--card));
       color:var(--text);min-height:92px;padding:15px;text-align:left;cursor:pointer;
-      transition:transform .12s ease,border-color .12s ease,background .12s ease;
+      transition:transform .12s ease,border-color .12s ease;
       box-shadow:0 8px 26px rgba(0,0,0,.18)
     }
     button:active{transform:scale(.975)}
-    .tile.full{grid-column:1/-1;min-height:74px;display:flex;align-items:center;gap:12px}
+    .full{grid-column:1/-1;min-height:74px;display:flex;align-items:center;gap:12px}
     .icon{font-size:25px;display:block;margin-bottom:10px}
     .full .icon{margin:0;font-size:26px}
     .name{font-size:15px;font-weight:800}
     .desc{font-size:12px;color:var(--muted);margin-top:4px;line-height:1.3}
-    .special{border-color:rgba(124,92,255,.35);background:linear-gradient(135deg,rgba(124,92,255,.18),var(--card))}
-    .exclusive{border-color:rgba(33,212,253,.25)}
     .admin{border-color:rgba(52,211,153,.32);background:linear-gradient(135deg,rgba(52,211,153,.12),var(--card))}
+    .danger{
+      display:none;margin-top:16px;padding:18px;border-radius:18px;
+      border:1px solid rgba(251,113,133,.3);background:rgba(251,113,133,.08);color:#ffd7df
+    }
+    .loading{padding:24px;text-align:center;color:var(--muted)}
+    #panel{display:none}
     .footer{margin-top:20px;text-align:center;color:#6f7a8b;font-size:11px}
-    @media(max-width:360px){.grid{grid-template-columns:1fr}.tile.full{grid-column:auto}}
+    @media(max-width:360px){.grid{grid-template-columns:1fr}.full{grid-column:auto}}
   </style>
 </head>
 <body>
   <main class="wrap">
     <section class="hero">
       <div class="eyebrow">BLEZZ RUSSIA</div>
-      <h1>SHOP MENU</h1>
-      <p class="sub">Быстрый доступ ко всему магазину прямо внутри Telegram.</p>
-      <div class="user" id="user">Открыто в Telegram Mini App</div>
+      <h1>ADMIN PANEL</h1>
+      <p class="sub">Mini App только для владельцев магазина.</p>
+      <div class="user" id="user">Проверяю доступ…</div>
     </section>
 
-    <div class="section-title">Магазин</div>
-    <section class="grid">
-      <button onclick="go('coins')"><span class="icon">💎</span><div class="name">Blezz Coins</div><div class="desc">Пакеты и своё количество BC</div></button>
-      <button onclick="go('transport')"><span class="icon">🚗</span><div class="name">Транспорт</div><div class="desc">Машины и спецтранспорт</div></button>
-      <button onclick="go('skins')"><span class="icon">👤</span><div class="name">Скины</div><div class="desc">Игровые образы</div></button>
-      <button onclick="go('bundles')"><span class="icon">🎁</span><div class="name">Наборы</div><div class="desc">Комплекты товаров</div></button>
-      <button class="tile full exclusive" onclick="go('exclusive')"><span class="icon">💠</span><div><div class="name">Эксклюзив</div><div class="desc">Ограниченные машины и скины с остатком</div></div></button>
+    <div id="loading" class="loading">Проверка прав владельца…</div>
+
+    <section id="denied" class="danger">
+      <b>⛔ Доступ запрещён</b><br><br>
+      Эта Mini App доступна только владельцам BLEZZ RUSSIA.
     </section>
 
-    <div class="section-title">Активности</div>
-    <section class="grid">
-      <button onclick="go('promos')"><span class="icon">🔥</span><div class="name">Акции</div><div class="desc">Товары со скидкой</div></button>
-      <button onclick="go('giveaways')"><span class="icon">🎉</span><div class="name">Розыгрыши</div><div class="desc">Участие и призы</div></button>
-      <button onclick="go('market')"><span class="icon">📣</span><div class="name">Объявления</div><div class="desc">Маркет игроков</div></button>
-      <button onclick="go('rewards')"><span class="icon">🎮</span><div class="name">Бонусы</div><div class="desc">Баллы, рулетка и VIP</div></button>
-    </section>
+    <div id="panel">
+      <div class="section-title">Управление магазином</div>
+      <section class="grid">
+        <button onclick="go('products')"><span class="icon">🛍</span><div class="name">Товары</div><div class="desc">Список и редактирование товаров</div></button>
+        <button onclick="go('add')"><span class="icon">➕</span><div class="name">Добавить товар</div><div class="desc">Создать новый товар</div></button>
+        <button onclick="go('promos')"><span class="icon">🔥</span><div class="name">Акции</div><div class="desc">Скидки и промокоды</div></button>
+        <button onclick="go('giveaways')"><span class="icon">🎉</span><div class="name">Розыгрыши</div><div class="desc">Создание и управление</div></button>
+      </section>
 
-    <div class="section-title">Мой аккаунт</div>
-    <section class="grid">
-      <button onclick="go('cart')"><span class="icon">🛒</span><div class="name">Корзина</div><div class="desc">Текущие товары</div></button>
-      <button onclick="go('orders')"><span class="icon">📦</span><div class="name">Мои заказы</div><div class="desc">Статусы и оплата</div></button>
-      <button onclick="go('reviews')"><span class="icon">⭐</span><div class="name">Отзывы</div><div class="desc">Оставить или посмотреть</div></button>
-      <button onclick="go('notifications')"><span class="icon">🔔</span><div class="name">Уведомления</div><div class="desc">Включить или отключить</div></button>
-      <button class="tile full admin" onclick="go('admin')"><span class="icon">🛠</span><div><div class="name">Админ-панель</div><div class="desc">Откроется только владельцам</div></div></button>
-      <button class="tile full special" onclick="support()"><span class="icon">💬</span><div><div class="name">Поддержка</div><div class="desc">@gromovnachile</div></div></button>
-    </section>
+      <div class="section-title">Заказы и контроль</div>
+      <section class="grid">
+        <button onclick="go('orders')"><span class="icon">📦</span><div class="name">Заказы</div><div class="desc">Оплата, выдача, возвраты</div></button>
+        <button onclick="go('stats')"><span class="icon">📊</span><div class="name">Статистика</div><div class="desc">Пользователи и продажи</div></button>
+        <button onclick="go('reviews')"><span class="icon">⭐</span><div class="name">Отзывы</div><div class="desc">Модерация отзывов</div></button>
+        <button onclick="go('market')"><span class="icon">📣</span><div class="name">Объявления</div><div class="desc">Модерация маркета</div></button>
+        <button class="full admin" onclick="go('cover')"><span class="icon">🖼</span><div><div class="name">Обложка магазина</div><div class="desc">Изменить изображение магазина</div></div></button>
+        <button class="full admin" onclick="go('menu')"><span class="icon">🛠</span><div><div class="name">Полная админ-панель</div><div class="desc">Открыть обычную админ-панель в чате</div></div></button>
+      </section>
+    </div>
 
-    <div class="footer">BLEZZ RUSSIA SHOP · Telegram Mini App</div>
+    <div class="footer">BLEZZ RUSSIA · Owner Mini App</div>
   </main>
 
   <script>
-    const tg = window.Telegram?.WebApp;
-    if (tg) {
-      tg.ready();
-      tg.expand();
-      const u = tg.initDataUnsafe?.user;
-      if (u) document.getElementById('user').textContent = 'Привет, ' + (u.first_name || u.username || 'игрок') + ' 👋';
-    }
-
+    const tg=window.Telegram?.WebApp;
     const API='https://rskgbkgtrigtznnksbyp.supabase.co/functions/v1/blezz-miniapp-api';
 
-    async function go(action){
-      if (!tg) return;
-      try {
-        tg.HapticFeedback?.impactOccurred('light');
-        const r=await fetch(API,{
-          method:'POST',
-          headers:{'content-type':'application/json'},
-          body:JSON.stringify({initData:tg.initData,action})
-        });
-        const data=await r.json().catch(()=>({}));
-        if(!r.ok || !data.ok) throw new Error(data.error||'request_failed');
-        tg.HapticFeedback?.notificationOccurred('success');
-        setTimeout(()=>tg.close(),120);
-      } catch (e) {
-        tg.HapticFeedback?.notificationOccurred('error');
-        tg.showAlert?.('Не удалось открыть раздел. Попробуйте ещё раз.');
+    if(tg){
+      tg.ready();
+      tg.expand();
+      tg.setHeaderColor?.('#090b10');
+      tg.setBackgroundColor?.('#090b10');
+    }
+
+    async function api(action){
+      const r=await fetch(API,{
+        method:'POST',
+        headers:{'content-type':'application/json'},
+        body:JSON.stringify({initData:tg?.initData||'',action})
+      });
+      const data=await r.json().catch(()=>({}));
+      if(!r.ok || !data.ok){
+        const e=new Error(data.error||'request_failed');
+        e.code=data.error;
+        throw e;
+      }
+      return data;
+    }
+
+    async function check(){
+      try{
+        const data=await api('check');
+        document.getElementById('loading').style.display='none';
+        document.getElementById('panel').style.display='block';
+        const u=data.user||{};
+        document.getElementById('user').textContent='Владелец: '+(u.first_name||('@'+u.username)||String(u.id));
+      }catch(e){
+        document.getElementById('loading').style.display='none';
+        document.getElementById('denied').style.display='block';
+        document.getElementById('user').textContent='Доступ только владельцам';
       }
     }
 
-    function support(){
-      if (tg?.openTelegramLink) tg.openTelegramLink('https://t.me/gromovnachile');
-      else location.href='https://t.me/gromovnachile';
+    async function go(action){
+      try{
+        tg?.HapticFeedback?.impactOccurred('light');
+        await api(action);
+        tg?.HapticFeedback?.notificationOccurred('success');
+        setTimeout(()=>tg?.close(),120);
+      }catch(e){
+        tg?.HapticFeedback?.notificationOccurred('error');
+        tg?.showAlert?.(e.code==='admin_only'?'Доступ только владельцам.':'Не удалось открыть раздел.');
+      }
     }
+
+    check();
   </script>
 </body>
 </html>
