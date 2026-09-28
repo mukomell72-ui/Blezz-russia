@@ -527,7 +527,9 @@
     const submitReceipt = document.getElementById('submit-receipt');
     const receiptStatus = document.getElementById('receipt-status');
     const API = 'https://rskgbkgtrigtznnksbyp.supabase.co/functions/v1/blezz-web-pay';
-    const token = new URLSearchParams(location.search).get('token');
+    const params = new URLSearchParams(location.search);
+    const token = params.get('token');
+    const wheelToken = params.get('wheel');
 
     product.addEventListener('input', () => {
       const value = product.value.trim();
@@ -590,30 +592,78 @@
       }
     }
 
-    async function loadLinkedOrder() {
-      if (!token) return;
+    function renderWheel(data) {
+      const spin = data.spin;
+      const isRub = spin.payment_method === 'rub';
+      const expectedMethod = isRub ? 'rub_card' : 'uah_card';
+
+      document.getElementById('order-heading').textContent = 'Оплата VIP-прокрутки #' + spin.id;
+      document.getElementById('order-meta').textContent =
+        'VIP Колесо Фортуны · после подтверждения оплаты откроется прокрутка.';
+      document.getElementById('order-rub').textContent = isRub ? (spin.payment_amount + ' ₽') : '₽ —';
+      document.getElementById('order-uah').textContent = !isRub ? (spin.payment_amount + ' ₴') : '₴ —';
+      document.getElementById('order-stars').textContent = '⭐ —';
+
+      const items = document.getElementById('order-items');
+      items.innerHTML = '';
+      const row = document.createElement('div');
+      row.className = 'order-row';
+      const name = document.createElement('span');
+      name.textContent = '🎰 VIP-прокрутка';
+      const qty = document.createElement('strong');
+      qty.textContent = '× 1';
+      row.append(name, qty);
+      items.appendChild(row);
+
+      receiptUpload.hidden = false;
+      document.querySelectorAll('input[name="pay-method"]').forEach(el => {
+        el.checked = el.value === expectedMethod;
+        el.disabled = el.value !== expectedMethod;
+      });
+
+      if (spin.status === 'payment_review' && !spin.payment_receipt_path) {
+        setReceiptStatus('После оплаты прикрепите чек. Он автоматически уйдёт в канал проверки BLEZZ RUSSIA.');
+      } else if (spin.status === 'payment_review') {
+        submitReceipt.disabled = true;
+        receiptFile.disabled = true;
+        setReceiptStatus('Чек уже отправлен и находится на проверке у администрации.', 'ok');
+      } else if (spin.status === 'approved' || spin.status === 'spun') {
+        submitReceipt.disabled = true;
+        receiptFile.disabled = true;
+        setReceiptStatus('Оплата этой прокрутки уже подтверждена.', 'ok');
+      } else {
+        submitReceipt.disabled = true;
+        receiptFile.disabled = true;
+        setReceiptStatus('Эта прокрутка сейчас недоступна для оплаты.', 'error');
+      }
+    }
+
+    async function loadLinkedPayment() {
+      if (!token && !wheelToken) return;
       manualHero.hidden = true;
       linkedOrder.hidden = false;
       paidLink.textContent = 'Проблема с оплатой? Написать в поддержку';
       paidLink.href = 'https://t.me/gromovnachile';
 
       try {
-        const response = await fetch(API + '?token=' + encodeURIComponent(token), {
-          cache: 'no-store'
-        });
+        const query = wheelToken
+          ? '?wheel=' + encodeURIComponent(wheelToken)
+          : '?token=' + encodeURIComponent(token);
+        const response = await fetch(API + query, { cache: 'no-store' });
         const data = await response.json();
-        if (!response.ok || !data.ok) throw new Error(data.error || 'order_load_failed');
-        renderOrder(data);
+        if (!response.ok || !data.ok) throw new Error(data.error || 'payment_load_failed');
+        if (data.kind === 'wheel') renderWheel(data);
+        else renderOrder(data);
       } catch (error) {
-        document.getElementById('order-heading').textContent = 'Заказ не найден';
+        document.getElementById('order-heading').textContent = 'Оплата не найдена';
         document.getElementById('order-meta').textContent =
-          'Ссылка недействительна или заказ больше недоступен. Откройте оплату повторно из бота.';
+          'Ссылка недействительна или больше недоступна. Откройте оплату повторно из бота.';
         receiptUpload.hidden = true;
       }
     }
 
     submitReceipt.addEventListener('click', async () => {
-      if (!token) return;
+      if (!token && !wheelToken) return;
       const selected = document.querySelector('input[name="pay-method"]:checked');
       const file = receiptFile.files && receiptFile.files[0];
 
@@ -634,7 +684,8 @@
       setReceiptStatus('Отправляем чек в BLEZZ RUSSIA BOT...');
 
       const form = new FormData();
-      form.append('token', token);
+      if (wheelToken) form.append('wheel', wheelToken);
+      else form.append('token', token);
       form.append('method', selected.value);
       form.append('receipt', file);
 
@@ -646,7 +697,9 @@
         receiptFile.disabled = true;
         document.querySelectorAll('input[name="pay-method"]').forEach(el => el.disabled = true);
         setReceiptStatus(
-          'Чек отправлен. Бот и владельцы BLEZZ RUSSIA получили заказ на проверку.',
+          wheelToken
+            ? 'Чек отправлен. Он уже пришёл в канал проверки BLEZZ RUSSIA.'
+            : 'Чек отправлен. Бот и владельцы BLEZZ RUSSIA получили заказ на проверку.',
           'ok'
         );
         showToast('Чек отправлен в бот');
@@ -659,7 +712,7 @@
       }
     });
 
-    loadLinkedOrder();
+    loadLinkedPayment();
   </script>
 </body>
 </html>
