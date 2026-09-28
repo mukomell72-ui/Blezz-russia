@@ -64,13 +64,6 @@
       <div class="user" id="user">Проверяю доступ…</div>
     </section>
 
-    <div id="loading" class="loading">Проверка прав владельца…</div>
-
-    <section id="denied" class="danger">
-      <b>⛔ Доступ запрещён</b><br><br>
-      Эта Mini App доступна только владельцам BLEZZ RUSSIA.
-    </section>
-
     <div id="panel">
       <div class="section-title">Управление магазином</div>
       <section class="grid">
@@ -96,57 +89,26 @@
 
   <script>
     const tg=window.Telegram?.WebApp;
-    const API='https://rskgbkgtrigtznnksbyp.supabase.co/functions/v1/blezz-miniapp-api';
 
     if(tg){
       tg.ready();
       tg.expand();
       tg.setHeaderColor?.('#090b10');
       tg.setBackgroundColor?.('#090b10');
+      document.getElementById('panel').style.display='block';
+      document.getElementById('user').textContent='Доступ проверяется ботом · только владельцы';
     }
 
-    async function api(action){
-      const r=await fetch(API,{
-        method:'POST',
-        headers:{'content-type':'application/json'},
-        body:JSON.stringify({initData:tg?.initData||'',action})
-      });
-      const data=await r.json().catch(()=>({}));
-      if(!r.ok || !data.ok){
-        const e=new Error(data.error||'request_failed');
-        e.code=data.error;
-        throw e;
-      }
-      return data;
-    }
-
-    async function check(){
+    function go(action){
       try{
-        const data=await api('check');
-        document.getElementById('loading').style.display='none';
-        document.getElementById('panel').style.display='block';
-        const u=data.user||{};
-        document.getElementById('user').textContent='Владелец: '+(u.first_name||('@'+u.username)||String(u.id));
-      }catch(e){
-        document.getElementById('loading').style.display='none';
-        document.getElementById('denied').style.display='block';
-        document.getElementById('user').textContent='Доступ только владельцам';
-      }
-    }
-
-    async function go(action){
-      try{
-        tg?.HapticFeedback?.impactOccurred('light');
-        await api(action);
-        tg?.HapticFeedback?.notificationOccurred('success');
-        setTimeout(()=>tg?.close(),120);
+        if(!tg) throw new Error('telegram_only');
+        tg.HapticFeedback?.impactOccurred('light');
+        tg.sendData(JSON.stringify({action}));
       }catch(e){
         tg?.HapticFeedback?.notificationOccurred('error');
-        tg?.showAlert?.(e.code==='admin_only'?'Доступ только владельцам.':'Не удалось открыть раздел.');
+        tg?.showAlert?.('Откройте Admin Mini App кнопкой внутри бота.');
       }
     }
-
-    check();
   </script>
 </body>
 </html>
