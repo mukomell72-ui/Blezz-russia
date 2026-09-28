@@ -97,13 +97,25 @@
       if (u) document.getElementById('user').textContent = 'Привет, ' + (u.first_name || u.username || 'игрок') + ' 👋';
     }
 
-    function go(action){
+    const API='https://rskgbkgtrigtznnksbyp.supabase.co/functions/v1/blezz-miniapp-api';
+
+    async function go(action){
       if (!tg) return;
       try {
         tg.HapticFeedback?.impactOccurred('light');
-        tg.sendData(JSON.stringify({action}));
+        const r=await fetch(API,{
+          method:'POST',
+          headers:{'content-type':'application/json'},
+          body:JSON.stringify({initData:tg.initData,action})
+        });
+        const data=await r.json().catch(()=>({}));
+        if(!r.ok || !data.ok) throw new Error(data.error||'request_failed');
+        tg.HapticFeedback?.notificationOccurred('success');
         setTimeout(()=>tg.close(),120);
-      } catch (e) {}
+      } catch (e) {
+        tg.HapticFeedback?.notificationOccurred('error');
+        tg.showAlert?.('Не удалось открыть раздел. Попробуйте ещё раз.');
+      }
     }
 
     function support(){
