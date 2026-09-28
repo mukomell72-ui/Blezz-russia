@@ -1,0 +1,519 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>BLEZZ RUSSIA — VIP Wheel</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    :root{
+      --bg:#070811;--panel:#11131d;--panel2:#171a27;--text:#f7f7fb;--muted:#9299aa;
+      --line:rgba(255,255,255,.09);--gold:#ffd166;--gold2:#ff9f1c;--purple:#8b5cf6;
+      --good:#34d399;--bad:#fb7185;--blue:#60a5fa;
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+    body{
+      min-height:100vh;
+      background:
+        radial-gradient(circle at 50% -10%,rgba(139,92,246,.24),transparent 32%),
+        radial-gradient(circle at 20% 30%,rgba(255,209,102,.09),transparent 28%),
+        var(--bg);
+    }
+    .wrap{max-width:620px;margin:0 auto;padding:18px 14px 32px}
+    .hero{
+      border:1px solid var(--line);border-radius:24px;padding:20px;
+      background:linear-gradient(135deg,rgba(139,92,246,.18),rgba(17,19,29,.92));
+    }
+    .eyebrow{font-size:11px;font-weight:900;letter-spacing:.16em;color:#c9b8ff;text-transform:uppercase}
+    h1{font-size:27px;line-height:1.05;margin:7px 0 5px}
+    .sub{margin:0;color:var(--muted);font-size:14px;line-height:1.45}
+    .vipline{margin-top:13px;padding-top:13px;border-top:1px solid var(--line);font-size:13px;color:#d9deea}
+    .wheel-card{
+      margin-top:16px;border:1px solid var(--line);border-radius:26px;
+      background:linear-gradient(180deg,var(--panel2),var(--panel));padding:18px 12px 16px;overflow:hidden;
+    }
+    .wheel-wrap{
+      position:relative;width:min(88vw,420px);aspect-ratio:1;margin:8px auto 16px;
+      display:grid;place-items:center;
+    }
+    #wheel{
+      width:100%;height:100%;border-radius:50%;display:block;transform:rotate(0deg);
+      transition:transform 5.2s cubic-bezier(.12,.72,.08,1);
+      filter:drop-shadow(0 18px 24px rgba(0,0,0,.34));
+    }
+    .ring{position:absolute;inset:3.2%;border-radius:50%;border:2px solid rgba(255,255,255,.17);pointer-events:none}
+    .pointer{
+      position:absolute;top:-1px;left:50%;transform:translateX(-50%);width:0;height:0;
+      border-left:17px solid transparent;border-right:17px solid transparent;border-bottom:34px solid var(--gold);
+      filter:drop-shadow(0 4px 5px rgba(0,0,0,.5));z-index:4;
+    }
+    .hub{
+      position:absolute;width:25%;aspect-ratio:1;border-radius:50%;display:grid;place-items:center;text-align:center;
+      font-weight:900;font-size:14px;line-height:1.05;
+      background:radial-gradient(circle at 35% 28%,#fff1b5,var(--gold2) 52%,#9a5000);
+      color:#241300;border:5px solid rgba(255,255,255,.78);box-shadow:0 7px 20px rgba(0,0,0,.42);z-index:3;
+    }
+    .status{
+      min-height:52px;border:1px solid var(--line);border-radius:16px;padding:12px 13px;
+      color:#dfe4ee;background:rgba(255,255,255,.025);font-size:13px;line-height:1.45;text-align:center;
+    }
+    .status.good{border-color:rgba(52,211,153,.35);color:#c7f9e6}
+    .status.bad{border-color:rgba(251,113,133,.35);color:#ffd4dc}
+    .actions{display:grid;gap:9px;margin-top:12px}
+    button{
+      appearance:none;border:0;border-radius:16px;padding:14px 16px;min-height:50px;
+      font-size:15px;font-weight:850;cursor:pointer;color:#101018;
+      background:linear-gradient(135deg,var(--gold),var(--gold2));
+    }
+    button.secondary{color:var(--text);background:#222637;border:1px solid var(--line)}
+    button.good{color:#07130f;background:linear-gradient(135deg,#6ee7b7,var(--good))}
+    button.blue{color:#07111f;background:linear-gradient(135deg,#93c5fd,var(--blue))}
+    button:disabled{opacity:.46;cursor:not-allowed}
+    .pay-box{
+      margin-top:12px;border:1px solid var(--line);border-radius:18px;padding:12px;background:rgba(255,255,255,.025)
+    }
+    .pay-title{font-size:13px;font-weight:850;margin-bottom:9px}
+    .pay-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+    .pay-method{
+      min-height:68px;padding:10px;border:1px solid var(--line);border-radius:14px;background:#191d2a;
+      color:var(--text);font-size:12px;font-weight:800;text-align:center;
+    }
+    .pay-method.active{outline:2px solid rgba(255,209,102,.72);background:#24202a}
+    .hint{margin-top:9px;color:var(--muted);font-size:11px;line-height:1.4;text-align:center}
+    .prizes{margin-top:16px;border:1px solid var(--line);border-radius:20px;padding:14px;background:rgba(255,255,255,.025)}
+    .prizes h2{font-size:14px;margin:0 0 10px;color:#d9deea}
+    .prize-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+    .prize{min-width:0;padding:9px 10px;border-radius:12px;background:#181b28;border:1px solid rgba(255,255,255,.06);font-size:12px;color:#d4d9e4;line-height:1.25}
+    .lock{
+      display:none;margin-top:16px;border:1px solid rgba(251,113,133,.28);border-radius:20px;
+      padding:18px;background:rgba(251,113,133,.07);text-align:center
+    }
+    .lock b{display:block;font-size:18px;margin-bottom:7px}
+    .loader{padding:26px 10px;text-align:center;color:var(--muted)}
+    .footer{margin-top:18px;text-align:center;font-size:11px;color:#676f80}
+    @media(max-width:420px){.pay-grid{grid-template-columns:1fr}.prize-grid{grid-template-columns:1fr 1fr}}
+    @media(max-width:340px){.prize-grid{grid-template-columns:1fr}.hub{font-size:12px}}
+    @media(prefers-reduced-motion:reduce){#wheel{transition-duration:.8s}}
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="hero">
+      <div class="eyebrow">BLEZZ RUSSIA · VIP</div>
+      <h1>🎰 Колесо Фортуны</h1>
+      <p class="sub">Для VIP: 1 бесплатная прокрутка каждый день. После неё можно крутить ещё за ₽, ₴ или ⭐.</p>
+      <div class="vipline" id="vipline">Проверяю VIP-статус…</div>
+    </section>
+
+    <div id="loading" class="loader">Загружаю рулетку…</div>
+
+    <section id="locked" class="lock">
+      <b>🔒 Только для VIP</b>
+      Активируйте VIP в боте, чтобы получить доступ к Колесу Фортуны.
+      <div class="actions">
+        <button class="secondary" id="closeBtn" type="button">Закрыть</button>
+      </div>
+    </section>
+
+    <section id="game" class="wheel-card" hidden>
+      <div class="wheel-wrap">
+        <canvas id="wheel" width="900" height="900" aria-label="Колесо Фортуны"></canvas>
+        <div class="ring"></div>
+        <div class="pointer"></div>
+        <div class="hub">BLEZZ<br>VIP</div>
+      </div>
+
+      <div id="status" class="status" aria-live="polite">Готово к игре.</div>
+
+      <div class="actions">
+        <button id="freeBtn" class="good" type="button" hidden>🎁 Забрать бесплатную прокрутку</button>
+        <button id="spinBtn" class="good" type="button" hidden>🎰 КРУТИТЬ КОЛЕСО</button>
+        <button id="refreshBtn" class="secondary" type="button" hidden>🔄 Проверить оплату</button>
+      </div>
+
+      <div id="payBox" class="pay-box" hidden>
+        <div class="pay-title">Ещё одна прокрутка</div>
+        <div class="pay-grid">
+          <button class="pay-method" id="rubMethod" type="button">💵 <span id="rubPrice">30</span> ₽</button>
+          <button class="pay-method" id="uahMethod" type="button">🇺🇦 <span id="uahPrice">16</span> ₴</button>
+          <button class="pay-method" id="starsMethod" type="button">⭐ <span id="starsPrice">15</span> Stars</button>
+        </div>
+        <div class="actions">
+          <button id="payBtn" class="blue" type="button" disabled>Выберите способ оплаты</button>
+          <button id="claimBtn" class="secondary" type="button" hidden>✅ Я оплатил</button>
+        </div>
+        <div class="hint">После оплаты вернитесь сюда и нажмите «Я оплатил». Владелец подтвердит платёж, после чего появится кнопка вращения.</div>
+      </div>
+
+      <div class="prizes">
+        <h2>🎁 Что может выпасть</h2>
+        <div class="prize-grid" id="prizeGrid"></div>
+      </div>
+    </section>
+
+    <div class="footer">Все показанные сектора имеют одинаковый шанс · BLEZZ RUSSIA</div>
+  </main>
+
+  <script>
+    const tg=window.Telegram?.WebApp;
+    const API='https://rskgbkgtrigtznnksbyp.supabase.co/functions/v1/blezz-miniapp-api';
+
+    const loading=document.getElementById('loading');
+    const locked=document.getElementById('locked');
+    const game=document.getElementById('game');
+    const vipline=document.getElementById('vipline');
+    const statusEl=document.getElementById('status');
+    const freeBtn=document.getElementById('freeBtn');
+    const spinBtn=document.getElementById('spinBtn');
+    const refreshBtn=document.getElementById('refreshBtn');
+    const payBox=document.getElementById('payBox');
+    const payBtn=document.getElementById('payBtn');
+    const claimBtn=document.getElementById('claimBtn');
+    const closeBtn=document.getElementById('closeBtn');
+    const rubMethod=document.getElementById('rubMethod');
+    const uahMethod=document.getElementById('uahMethod');
+    const starsMethod=document.getElementById('starsMethod');
+    const rubPrice=document.getElementById('rubPrice');
+    const uahPrice=document.getElementById('uahPrice');
+    const starsPrice=document.getElementById('starsPrice');
+    const prizeGrid=document.getElementById('prizeGrid');
+    const canvas=document.getElementById('wheel');
+    const ctx=canvas.getContext('2d');
+
+    let state={
+      prices:{rub:30,uah:16,stars:15},
+      owner:'gromovnachile',
+      paymentUrl:'https://mukomell72-ui.github.io/Blezz-russia/',
+      paymentAvailable:{rub:true,uah:true,stars:true},
+      prizes:[],spin:null,freeAvailable:false
+    };
+    let selectedMethod=null;
+    let rotation=0;
+    let pollTimer=null;
+    let spinning=false;
+
+    if(tg){
+      tg.ready();
+      tg.expand();
+      tg.setHeaderColor?.('#070811');
+      tg.setBackgroundColor?.('#070811');
+    }
+
+    function haptic(type='light'){
+      try{tg?.HapticFeedback?.impactOccurred(type)}catch{}
+    }
+
+    async function api(action,extra={}){
+      const r=await fetch(API,{
+        method:'POST',
+        headers:{'content-type':'application/json'},
+        body:JSON.stringify({initData:tg?.initData||'',action,...extra})
+      });
+      const data=await r.json().catch(()=>({}));
+      if(!r.ok || !data.ok){
+        const e=new Error(data.error||'request_failed');
+        e.code=data.error||'request_failed';
+        throw e;
+      }
+      return data;
+    }
+
+    function escapeHtml(v){
+      return String(v??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+    }
+
+    function shortLabel(title){
+      return String(title)
+        .replace(' игровых рублей','')
+        .replace('💰 ','💰\n')
+        .replace('💎 ','💎\n')
+        .replace('👤 ','👤\n');
+    }
+
+    function drawWheel(){
+      const list=state.prizes;
+      const n=list.length||1;
+      const cx=canvas.width/2,cy=canvas.height/2,r=canvas.width*.47;
+      const seg=Math.PI*2/n;
+      const colors=['#7c3aed','#e11d48','#d97706','#0891b2','#4f46e5','#be123c','#a16207','#0f766e','#6d28d9','#b45309'];
+
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      for(let i=0;i<n;i++){
+        const start=-Math.PI/2+i*seg;
+        const end=start+seg;
+        ctx.beginPath();
+        ctx.moveTo(cx,cy);
+        ctx.arc(cx,cy,r,start,end);
+        ctx.closePath();
+        ctx.fillStyle=colors[i%colors.length];
+        ctx.fill();
+        ctx.strokeStyle='rgba(255,255,255,.22)';
+        ctx.lineWidth=4;
+        ctx.stroke();
+
+        ctx.save();
+        ctx.translate(cx,cy);
+        ctx.rotate(start+seg/2);
+        ctx.textAlign='right';
+        ctx.textBaseline='middle';
+        ctx.fillStyle='#fff';
+        ctx.font='800 31px system-ui,-apple-system,Segoe UI,sans-serif';
+        const parts=shortLabel(list[i]?.title||'Приз').split('\n');
+        const x=r*.84;
+        if(parts.length===1){
+          ctx.fillText(parts[0],x,0,r*.5);
+        }else{
+          ctx.fillText(parts[0],x,-17,r*.45);
+          ctx.font='800 27px system-ui,-apple-system,Segoe UI,sans-serif';
+          ctx.fillText(parts.slice(1).join(' '),x,20,r*.48);
+        }
+        ctx.restore();
+      }
+
+      ctx.beginPath();
+      ctx.arc(cx,cy,r,0,Math.PI*2);
+      ctx.strokeStyle='rgba(255,255,255,.62)';
+      ctx.lineWidth=9;
+      ctx.stroke();
+    }
+
+    function renderPrizes(){
+      prizeGrid.innerHTML='';
+      for(const p of state.prizes){
+        const el=document.createElement('div');
+        el.className='prize';
+        el.textContent=p.title;
+        prizeGrid.appendChild(el);
+      }
+    }
+
+    function setStatus(text,kind=''){
+      statusEl.className='status'+(kind?' '+kind:'');
+      statusEl.innerHTML=text;
+    }
+
+    function resetPaymentSelection(){
+      selectedMethod=null;
+      [rubMethod,uahMethod,starsMethod].forEach(x=>x.classList.remove('active'));
+      payBtn.disabled=true;
+      payBtn.textContent='Выберите способ оплаты';
+      claimBtn.hidden=true;
+    }
+
+    function selectMethod(method){
+      selectedMethod=method;
+      [rubMethod,uahMethod,starsMethod].forEach(x=>x.classList.remove('active'));
+      const map={rub:rubMethod,uah:uahMethod,stars:starsMethod};
+      map[method]?.classList.add('active');
+
+      if(method==='rub') payBtn.textContent='💵 Оплатить '+state.prices.rub+' ₽';
+      if(method==='uah') payBtn.textContent='🇺🇦 Оплатить '+state.prices.uah+' ₴';
+      if(method==='stars') payBtn.textContent='⭐ Оплатить '+state.prices.stars+' Stars';
+      payBtn.disabled=false;
+      claimBtn.hidden=false;
+    }
+
+    function updateControls(){
+      const s=state.spin;
+      freeBtn.hidden=true;
+      spinBtn.hidden=true;
+      refreshBtn.hidden=true;
+      payBox.hidden=true;
+      stopPolling();
+
+      if(s && s.status==='payment_review'){
+        refreshBtn.hidden=false;
+        setStatus('⏳ Оплата вращения <b>#'+s.id+'</b> проверяется владельцем.');
+        startPolling();
+        return;
+      }
+
+      if(s && s.status==='approved'){
+        spinBtn.hidden=false;
+        if(s.payment_method==='free'){
+          setStatus('🎁 Бесплатная прокрутка готова. Нажмите «КРУТИТЬ КОЛЕСО».','good');
+        }else{
+          setStatus('✅ Оплата подтверждена. Колесо готово!','good');
+        }
+        return;
+      }
+
+      if(state.freeAvailable){
+        freeBtn.hidden=false;
+        setStatus('🎁 Сегодня вам доступна <b>1 бесплатная VIP-прокрутка</b>.','good');
+        return;
+      }
+
+      payBox.hidden=false;
+      resetPaymentSelection();
+      setStatus('Бесплатная прокрутка на сегодня уже использована. Можно крутить дальше за ₽, ₴ или ⭐.');
+    }
+
+    function startPolling(){
+      if(pollTimer) return;
+      pollTimer=setInterval(refreshStatus,2500);
+    }
+
+    function stopPolling(){
+      if(pollTimer){clearInterval(pollTimer);pollTimer=null}
+    }
+
+    async function applyState(d){
+      state.prices=d.prices||state.prices;
+      state.owner=d.owner_username||state.owner;
+      state.paymentUrl=d.payment_url||state.paymentUrl;
+      state.paymentAvailable=d.payment_available||state.paymentAvailable;
+      state.prizes=Array.isArray(d.prizes)?d.prizes:state.prizes;
+      state.spin=d.spin||null;
+      state.freeAvailable=!!d.free_available;
+
+      rubPrice.textContent=state.prices.rub;
+      uahPrice.textContent=state.prices.uah;
+      starsPrice.textContent=state.prices.stars;
+      rubMethod.disabled=state.paymentAvailable.rub===false;
+      uahMethod.disabled=state.paymentAvailable.uah===false;
+      starsMethod.disabled=state.paymentAvailable.stars===false;
+
+      renderPrizes();
+      drawWheel();
+      updateControls();
+    }
+
+    async function refreshStatus(){
+      try{
+        const d=await api('status');
+        await applyState(d);
+      }catch{}
+    }
+
+    async function init(){
+      if(!tg){
+        loading.textContent='Откройте VIP рулетку внутри Telegram.';
+        return;
+      }
+      try{
+        const d=await api('check');
+        loading.hidden=true;
+
+        if(!d.vip){
+          vipline.textContent='VIP не активен';
+          locked.style.display='block';
+          game.hidden=true;
+          return;
+        }
+
+        const until=d.vip_until?new Date(d.vip_until).toLocaleString('ru-RU'):'—';
+        vipline.innerHTML='👑 VIP активен до <b>'+escapeHtml(until)+'</b>';
+        game.hidden=false;
+        await applyState(d);
+      }catch(e){
+        loading.textContent=e.code==='invalid_telegram_session'
+          ? 'Откройте рулетку кнопкой из раздела VIP в боте.'
+          : 'Не удалось загрузить рулетку. Попробуйте открыть её ещё раз.';
+      }
+    }
+
+    freeBtn.addEventListener('click',async()=>{
+      if(freeBtn.disabled) return;
+      freeBtn.disabled=true;
+      haptic('medium');
+      setStatus('🎁 Активирую бесплатную прокрутку…');
+      try{
+        const d=await api('create_spin',{method:'free'});
+        state.spin=d.spin;
+        state.freeAvailable=false;
+        updateControls();
+      }catch(e){
+        setStatus(e.code==='free_spin_used'
+          ? 'Сегодня бесплатная прокрутка уже использована.'
+          : 'Не удалось активировать бесплатную прокрутку.','bad');
+        await refreshStatus();
+      }finally{
+        freeBtn.disabled=false;
+      }
+    });
+
+    rubMethod.addEventListener('click',()=>selectMethod('rub'));
+    uahMethod.addEventListener('click',()=>selectMethod('uah'));
+    starsMethod.addEventListener('click',()=>selectMethod('stars'));
+
+    payBtn.addEventListener('click',()=>{
+      if(!selectedMethod) return;
+      haptic();
+      let url=state.paymentUrl;
+      if(selectedMethod==='stars'){
+        const msg=encodeURIComponent('VIP рулетка — оплата '+state.prices.stars+' Stars');
+        url='https://t.me/'+state.owner+'?text='+msg;
+      }
+      if(tg?.openLink && selectedMethod!=='stars') tg.openLink(url);
+      else if(tg?.openTelegramLink && selectedMethod==='stars') tg.openTelegramLink(url);
+      else location.href=url;
+    });
+
+    claimBtn.addEventListener('click',async()=>{
+      if(!selectedMethod || claimBtn.disabled) return;
+      claimBtn.disabled=true;
+      haptic();
+      setStatus('⏳ Отправляю оплату на проверку…');
+      try{
+        const d=await api('create_spin',{method:selectedMethod});
+        state.spin=d.spin;
+        updateControls();
+      }catch(e){
+        setStatus(e.code==='payment_method_unavailable'
+          ? '❌ Этот способ оплаты сейчас недоступен.'
+          : '❌ Не удалось отправить оплату на проверку.','bad');
+      }finally{
+        claimBtn.disabled=false;
+      }
+    });
+
+    refreshBtn.addEventListener('click',async()=>{
+      haptic();
+      await refreshStatus();
+    });
+
+    spinBtn.addEventListener('click',async()=>{
+      if(spinning || !state.spin) return;
+      spinning=true;
+      spinBtn.disabled=true;
+      stopPolling();
+      haptic('heavy');
+      setStatus('🎰 Колесо набирает скорость…');
+      try{
+        const d=await api('spin',{spin_id:state.spin.id});
+        const idx=Math.max(0,state.prizes.findIndex(p=>Number(p.id)===Number(d.prize.id)));
+        const seg=360/state.prizes.length;
+        const target=(360-((idx+.5)*seg)%360)%360;
+        const current=((rotation%360)+360)%360;
+        const delta=5*360+((target-current+360)%360);
+        rotation+=delta;
+        canvas.style.transform='rotate('+rotation+'deg)';
+
+        const duration=matchMedia('(prefers-reduced-motion: reduce)').matches?900:5300;
+        setTimeout(async()=>{
+          setStatus('🎉 Ваш приз: <b>'+escapeHtml(d.prize.title)+'</b>','good');
+          try{tg?.HapticFeedback?.notificationOccurred('success')}catch{}
+          spinning=false;
+          spinBtn.disabled=false;
+          await refreshStatus();
+        },duration);
+      }catch(e){
+        spinning=false;
+        spinBtn.disabled=false;
+        if(e.code==='payment_review'){
+          setStatus('⏳ Оплата ещё проверяется.');
+          startPolling();
+        }else{
+          setStatus('❌ Не удалось прокрутить колесо. Попробуйте ещё раз.','bad');
+        }
+      }
+    });
+
+    closeBtn.addEventListener('click',()=>tg?.close());
+    window.addEventListener('pagehide',stopPolling);
+    init();
+  </script>
+</body>
+</html>
