@@ -130,6 +130,7 @@
         <button id="freeBtn" class="good" type="button" hidden>🎁 Забрать бесплатную прокрутку</button>
         <button id="spinBtn" class="good" type="button" hidden>🎰 КРУТИТЬ КОЛЕСО</button>
         <button id="refreshBtn" class="secondary" type="button" hidden>🔄 Проверить оплату</button>
+        <button id="cancelBtn" class="secondary" type="button" hidden>✖️ Отменить заявку на оплату</button>
       </div>
 
       <div id="payBox" class="pay-box" hidden>
@@ -167,6 +168,7 @@
     const freeBtn=document.getElementById('freeBtn');
     const spinBtn=document.getElementById('spinBtn');
     const refreshBtn=document.getElementById('refreshBtn');
+    const cancelBtn=document.getElementById('cancelBtn');
     const payBox=document.getElementById('payBox');
     const payBtn=document.getElementById('payBtn');
     const claimBtn=document.getElementById('claimBtn');
@@ -347,11 +349,13 @@
       freeBtn.hidden=true;
       spinBtn.hidden=true;
       refreshBtn.hidden=true;
+      cancelBtn.hidden=true;
       payBox.hidden=true;
       stopPolling();
 
       if(s && s.status==='payment_review'){
         refreshBtn.hidden=false;
+        cancelBtn.hidden=false;
         setStatus('⏳ Оплата вращения <b>#'+s.id+'</b> проверяется владельцем.');
         startPolling();
         return;
@@ -528,6 +532,31 @@
     refreshBtn.addEventListener('click',async()=>{
       haptic();
       await refreshStatus();
+    });
+
+    cancelBtn.addEventListener('click',async()=>{
+      if(!state.spin || cancelBtn.disabled) return;
+      const ok=window.confirm('Отменить текущую заявку на оплату и вернуться к выбору прокрутки?');
+      if(!ok) return;
+      cancelBtn.disabled=true;
+      haptic('medium');
+      stopPolling();
+      setStatus('✖️ Отменяю заявку на оплату…');
+      try{
+        await api('cancel_spin',{spin_id:state.spin.id});
+        state.spin=null;
+        setStatus('✅ Заявка отменена. Можно выбрать способ оплаты заново.','good');
+        await refreshStatus();
+      }catch(e){
+        if(e.code==='spin_already_approved'){
+          setStatus('✅ Оплата уже подтверждена. Прокрутку отменить нельзя.','good');
+        }else{
+          setStatus('❌ Не удалось отменить заявку. Попробуйте ещё раз.','bad');
+        }
+        await refreshStatus();
+      }finally{
+        cancelBtn.disabled=false;
+      }
     });
 
     spinBtn.addEventListener('click',async()=>{
